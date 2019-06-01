@@ -16,9 +16,9 @@ end
 
 function cross_product(p0, p1)
     return {
-        x = p0.y * p1.z - p0.z * p1.y,
-        y = p0.x * p1.z - p0.z * p1.x,
-        z = p0.x * p1.y - p0.y * p1.x
+        x = p0.y*p1.z - p0.z*p1.y;
+        y = p0.z*p1.x - p0.x*p1.z;
+        z = p0.x*p1.y - p0.y*p1.x;
     }
 end
 
@@ -35,11 +35,10 @@ function normalize(vec)
     }
 end
 
-function create_plane(dx, dy, dh)
-    local dire = normalize({x=dx, y= dy, z=dh})     -- Direction vector
-    local side = normalize({x=dy, y=-dx, z=0.0})    -- Side vector
-
-    return cross_product(side, dire)
+function create_normal(dx, dy, dh)
+    local dire = normalize({x=dx, y= dy, z=dh})     -- Direction of pixel
+    local orth = normalize({x=dy, y=-dx, z=0.0})    -- Orthogonal
+    return cross_product(orth, dire)                -- Upwards vector
 end
 
 local img = cel.image:clone()
@@ -49,60 +48,63 @@ if img.colorMode == ColorMode.RGB then
     local rgba = app.pixelColor.rgba
     local rgbaA = app.pixelColor.rgbaA
     for it in img:pixels() do
-        local planes = {}
+        local normals = {}
         local x = it.x
         local y = it.y
 
         function add_pixel_plane(dx, dy)
-            local offs_px = img:getPixel(x + dx, y + dy)
-            local dh = (app.pixelColor.rgbaR(offs_px) - app.pixelColor.rgbaR(it)) / 255
-            planes[#planes+1] = create_plane(dx, dy, dh)
-        end
-
-        if y > 0 then
-            add_pixel_plane(0, -1)
-
-            if x > 0 then
-                add_pixel_plane(-1, -1)
-            end
-
-            if x < img.width - 1 then
-                add_pixel_plane(1, -1)
-            end
-        end
-
-        if y < img.height -1 then
-            add_pixel_plane(0, 1)
-
-            if x > 0 then
-                add_pixel_plane(-1, 1)
-            end
-
-            if x < img.width - 1 then
-                add_pixel_plane(1, 1)
-            end
+            local offs_px = cel.image:getPixel(x + dx, y + dy)
+            -- Height difference, 50 seams like a good number
+            local dh = (app.pixelColor.rgbaR(offs_px) - app.pixelColor.rgbaR(it)) / 50
+            normals[#normals+1] = create_normal(dx, dy, dh)
         end
 
         if x > 0 then
             add_pixel_plane(-1, 0)
+
+            if y > 0 then
+                add_pixel_plane(-1, -1)
+            end
+
+            if y < img.height - 1 then
+                add_pixel_plane(-1, 1)
+            end
         end
 
-        if x < img.width - 1 then
+        if x < img.width -1 then
             add_pixel_plane(1, 0)
+
+            if y > 0 then
+                add_pixel_plane(1, -1)
+            end
+
+            if y < img.height - 1 then
+                add_pixel_plane(1, 1)
+            end
+        end
+
+        if y > 0 then
+            add_pixel_plane(0, -1)
+        end
+
+        if y < img.height - 1 then
+            add_pixel_plane(0, 1)
         end
 
         -- Calculate average plane
         local avg_plane = {x=0, y=0, z=0}
-        for i=1, #planes do
-            avg_plane.x = avg_plane.x + planes[i].x
-            avg_plane.y = avg_plane.y + planes[i].y
-            avg_plane.z = avg_plane.z + planes[i].z
+        for i=1, #normals do
+            avg_plane.x = avg_plane.x + normals[i].x
+            avg_plane.y = avg_plane.y + normals[i].y
+            avg_plane.z = avg_plane.z + normals[i].z
         end
 
+        avg_plane = normalize(avg_plane)
+
         -- Convert to pixel values
-        avg_plane.x = 128 + 127 * (avg_plane.x / #planes)
-        avg_plane.y = 128 + 127 * (avg_plane.y / #planes)
-        avg_plane.z = 128 + 127 * (avg_plane.z / #planes)
+        avg_plane.x = 127 + 127 * avg_plane.x
+        avg_plane.y = 127 - 127 * avg_plane.y
+        avg_plane.z = 127 + 127 * avg_plane.z
 
         it(rgba(avg_plane.x, avg_plane.y, avg_plane.z, 255))
     end
