@@ -53,43 +53,23 @@ if img.colorMode == ColorMode.RGB then
         local y = it.y
 
         function add_pixel_plane(dx, dy)
-            local offs_px = cel.image:getPixel(x + dx, y + dy)
+            local ax = (x + dx) % img.width
+            local ay = (y + dy) % img.height
+
+            local offs_px = cel.image:getPixel(ax, ay)
             -- Height difference, 50 seams like a good number
             local dh = (app.pixelColor.rgbaR(offs_px) - app.pixelColor.rgbaR(it)) / 50
             normals[#normals+1] = create_normal(dx, dy, dh)
         end
 
-        if x > 0 then
-            add_pixel_plane(-1, 0)
-
-            if y > 0 then
-                add_pixel_plane(-1, -1)
-            end
-
-            if y < img.height - 1 then
-                add_pixel_plane(-1, 1)
-            end
-        end
-
-        if x < img.width -1 then
-            add_pixel_plane(1, 0)
-
-            if y > 0 then
-                add_pixel_plane(1, -1)
-            end
-
-            if y < img.height - 1 then
-                add_pixel_plane(1, 1)
-            end
-        end
-
-        if y > 0 then
-            add_pixel_plane(0, -1)
-        end
-
-        if y < img.height - 1 then
-            add_pixel_plane(0, 1)
-        end
+        add_pixel_plane(-1, 0)
+        add_pixel_plane(-1, -1)
+        add_pixel_plane(-1, 1)
+        add_pixel_plane(1, 0)
+        add_pixel_plane(1, -1)
+        add_pixel_plane(1, 1)
+        add_pixel_plane(0, -1)
+        add_pixel_plane(0, 1)
 
         -- Calculate average plane
         local avg_plane = {x=0, y=0, z=0}
