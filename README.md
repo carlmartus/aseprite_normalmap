@@ -8,5 +8,6 @@ Script for [Aseprite](https://www.aseprite.org/).
 **PROTIP**: If you find yourself in a situation where you regenerate the image repeatedly. Bind a keyboard shortcut for running the script in _Edit_ => _Keyboard shortcuts_. You don't need to remove the created layer between runs.
 
 ## Changelog
+- (`2023-09-16`) Fix [issue](https://github.com/carlmartus/aseprite_normalmap/issues/1) with tiling images.
 - (`2023-09-14`) Add protip for binding keyboard shortcut in readme.
 - (`2019-06-01`) Initial version.
